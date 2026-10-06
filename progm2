@@ -1,0 +1,84 @@
+import tensorflow as tf
+from tensorflow.keras import datasets, layers, models
+import matplotlib.pyplot as plt
+import numpy as np
+from sklearn.metrics import classification_report
+
+# Load CIFAR-10 dataset
+(xtrain, ytrain), (xtest, ytest) = datasets.cifar10.load_data()
+
+print(xtrain.shape)
+print(xtest.shape)
+
+classes = [
+    'airplane', 'automobile', 'bird', 'cat', 'deer',
+    'dog', 'frog', 'horse', 'ship', 'truck'
+]
+
+# Display sample image
+def plot_sample(x, y, index):
+    plt.figure(figsize=(3, 3))
+    plt.imshow(x[index])
+    plt.xlabel(classes[y[index][0]])
+    plt.show()
+
+plot_sample(xtrain, ytrain, 1)
+
+# Normalize
+xtrain = xtrain.astype('float32') / 255.0
+xtest = xtest.astype('float32') / 255.0
+
+# CNN model
+cnn = models.Sequential([
+    layers.Input(shape=(32, 32, 3)),
+
+    # Feature extraction
+    layers.Conv2D(32, (3, 3), activation='relu'),
+    layers.MaxPooling2D((2, 2)),
+
+    layers.Conv2D(64, (3, 3), activation='relu'),
+    layers.MaxPooling2D((2, 2)),
+
+    # Classification
+    layers.Flatten(),
+    layers.Dense(64, activation='relu'),
+    layers.Dense(10, activation='softmax')
+])
+
+# Compile
+cnn.compile(
+    optimizer='adam',
+    loss='sparse_categorical_crossentropy',
+    metrics=['accuracy']
+)
+
+# Train
+history = cnn.fit(
+    xtrain,
+    ytrain,
+    epochs=20,
+    validation_data=(xtest, ytest)
+)
+
+# Evaluate
+test_loss, test_accuracy = cnn.evaluate(xtest, ytest)
+
+print("Test Loss:", test_loss)
+print("Test Accuracy:", test_accuracy)
+
+# Prediction
+ypred = cnn.predict(xtest)
+
+yclasses = [np.argmax(element) for element in ypred]
+
+# Classification report
+ytest_flat = ytest.reshape(-1)
+
+print("Classification Report:")
+print(
+    classification_report(
+        ytest_flat,
+        yclasses,
+        target_names=classes
+    )
+)
